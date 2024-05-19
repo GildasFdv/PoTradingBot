@@ -1,3 +1,5 @@
+debug = False
+
 class EventHandler:
     def process(self, data, candles):
         raise NotImplementedError("Subclasses should implement this!")
@@ -13,11 +15,15 @@ class EventManager:
     def handleEvent(self, data, candles):
         if self.current_event is not None:
             self.events[self.current_event].process(data, candles)
+            if debug:
+                print(f"EventManager: handled event {self.current_event}")
             self.current_event = None
 
     def setEventReceived(self, event_name):
         if event_name in self.events:
             self.current_event = event_name
+            if debug:
+                print(f"EventManager: received event {event_name}")
 
     def isEventReceived(self):
         return self.current_event is not None

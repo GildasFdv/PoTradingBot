@@ -10,8 +10,10 @@ from Event.UpdateStreamEventHandler import UpdateStreamEventHandler
 from Event.UpdateHistoryNewEventHandler import UpdateHistoryNewEventHandler
 import json
 import base64
-import pickle
 from Configuration import Configuration
+from threading import Lock
+from Event.PoCandle import Candle, CandleIndex
+from PoDriver import PoDriver
 
 class PoDataManagerParams(IntEnum):
     PO_DRIVER = 0
@@ -21,8 +23,8 @@ class PoDataManagerParams(IntEnum):
 class PoDataManager(Thread):
 
     def __init__(self, args):
+        Thread.__init__(self, args=args, name='PoDataManager')
         self.running = True
-        Thread.__init__(self, args=args, name='PoManager')
 
         self.candles_lock = args[PoDataManagerParams.CANDLES_LOCK]
         self.candles_lock.acquire()
@@ -35,15 +37,6 @@ class PoDataManager(Thread):
         self.eventManager.registerEventHandler('updateHistoryNew', UpdateHistoryNewEventHandler())
         self.eventManager.registerEventHandler('updateStream', UpdateStreamEventHandler())
 
-        try:
-            self.driver.get(Configuration.URL)
-            self.load_cookies(Configuration.COOKIES_FILE)
-            self.driver.get(Configuration.URL)
-        except FileNotFoundError:
-            self.driver.get(Configuration.URL)
-            sleep(10)
-            self.save_cookies(Configuration.COOKIES_FILE)
-
 
     def run(self):
         print("Data Manager: started")
@@ -55,8 +48,8 @@ class PoDataManager(Thread):
                     try: 
                         message = json.loads(wsData['message'])['message']
                         response = message.get('params', {}).get('response', {})
-                        payload_str = response['payloadData']
-                        json_part = payload_str.split('-', 1)[1]
+                        payload = response['payloadData']
+                        json_part = payload.split('-', 1)[1]
                         parsed_json = json.loads(json_part)
                         event_name = parsed_json[0]
                         self.eventManager.setEventReceived(event_name)
@@ -67,8 +60,8 @@ class PoDataManager(Thread):
                     message = json.loads(wsData['message'])['message']
                     response = message.get('params', {}).get('response', {})
                     if 'payloadData' in response:
-                        payload_str = base64.b64decode(response['payloadData']).decode('utf-8')
-                        data = json.loads(payload_str)
+                        payload = base64.b64decode(response['payloadData']).decode('utf-8')
+                        data = json.loads(payload)
                         self.candles_lock.acquire()
                         self.eventManager.handleEvent(data, self.candles)
                         self.candles_lock.release()
@@ -78,11 +71,3 @@ class PoDataManager(Thread):
     def stop(self):
         self.running = False
         print("Data Manager: stopped")
-
-    def save_cookies(self, location):
-        pickle.dump(self.driver.get_cookies(), open(location, "wb"))
-
-    def load_cookies(self, location):
-        cookies = pickle.load(open(location, "rb"))
-        for cookie in cookies:
-            self.driver.add_cookie(cookie)
