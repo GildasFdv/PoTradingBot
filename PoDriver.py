@@ -8,11 +8,12 @@ from Event.UpdateHistoryNewEventHandler import UpdateHistoryNewEventHandler
 from Configuration import Configuration
 from time import sleep
 import pickle
+from Symbols import Symbols
 
 
 class PoDriver(webdriver.Chrome):
     def __init__(self):
-        service = Service(executable_path=Configuration.CHROME_DRIVER_PATH)
+        service = Service()
         options = Options()
         options.set_capability('goog:loggingPrefs', {'performance': 'ALL'})
         webdriver.Chrome.__init__(self, service=service, options=options)
@@ -39,3 +40,7 @@ class PoDriver(webdriver.Chrome):
 
     def put(self):
         self.find_element(by=By.CLASS_NAME, value=f'btn-put').click()
+
+    def getCurrentSymbol(self):
+        symbol = self.find_element(by=By.CLASS_NAME, value='current-symbol').text
+        return Symbols.get(symbol, 'unknown symbol')

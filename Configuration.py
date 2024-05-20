@@ -3,4 +3,4 @@ class Configuration:
     SYMBOL = 'EURUSD_otc'
     URL = 'https://pocketoption.com/fr/cabinet/demo-quick-high-low/'
     COOKIES_FILE = 'path_to_cookies.pkl'
-    CHROME_DRIVER_PATH = 'C:/Users/gilda/Desktop/test hfx/pocket option/python/driver/chromedriver.exe'
+    CHROME_DRIVER_PATH = './chromedriver'

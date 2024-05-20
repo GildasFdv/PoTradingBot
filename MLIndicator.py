@@ -25,13 +25,15 @@ class MLIndicator(Thread):
         self.candles = args[MLIndicatorParams.CANDLES]
         self.candles_lock.release()
         print("MLIndicator: loading model...")
-        self.model = load('model_eurusd.joblib') 
+        self.model = load('model_eurusd_otc.joblib') 
         print("MLIndicator: model loaded")
 
     def run(self):
         print("MLIndicator: started")
         while self.running:
-            if not self.activated or self.threshlod < 0.5:
+            currentSymbol = self.poDriver.getCurrentSymbol()
+            if not self.activated or self.threshlod < 0.5 or currentSymbol != Configuration.SYMBOL:
+                print(f'Incorrect current symbol: {currentSymbol}')
                 continue
             try:
                 self.candles_lock.acquire()

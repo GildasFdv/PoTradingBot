@@ -29,7 +29,7 @@ if __name__ == "__main__":
             elif key == 'd':
                 mlIndicator.activated = False
             elif key == 's':
-                print(f'State: {'active' if mlIndicator.activated == True else 'inactive'}')
+                print(f'State: {"active" if mlIndicator.activated == True else "inactive"}')
     except KeyboardInterrupt:
         pass
     finally:
