@@ -8,6 +8,7 @@ from selenium.webdriver.common.by import By
 from Event.EventHandler import EventManager
 from Event.UpdateStreamEventHandler import UpdateStreamEventHandler
 from Event.UpdateHistoryNewEventHandler import UpdateHistoryNewEventHandler
+from Event.LoadHistoryPeriod import LoadHistoryPeriodEventHandler
 import json
 import base64
 from Configuration import Configuration
@@ -36,6 +37,7 @@ class PoDataManager(Thread):
         self.eventManager = EventManager()
         self.eventManager.registerEventHandler('updateHistoryNew', UpdateHistoryNewEventHandler())
         self.eventManager.registerEventHandler('updateStream', UpdateStreamEventHandler())
+        self.eventManager.registerEventHandler('loadHistoryPeriod', LoadHistoryPeriodEventHandler())
 
 
     def run(self):

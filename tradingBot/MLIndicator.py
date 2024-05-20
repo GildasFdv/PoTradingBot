@@ -37,14 +37,14 @@ class MLIndicator(Thread):
     def run(self):
         print("MLIndicator: started")
         while self.running:
-            if self.activated and self.threshlod > 0.5 and Configuration.SYMBOL == self.poDriver.getCurrentSymbol():
+            if self.activated and self.threshlod > 0.5 and Configuration.SYMBOL == self.poDriver.getCurrentSymbol() and self.modelLoaded:
                 try:
                     self.candles_lock.acquire()
-                    '''
-                    if len(self.candles) > 79 and self.candles[-2][CandleIndex.TIME] > self.last_timestamp:
+                    
+                    if len(self.candles) > 4681 and self.candles[-2][CandleIndex.TIME] > self.last_timestamp:
                         self.last_timestamp = self.candles[-2][CandleIndex.TIME]
 
-                        data = pd.DataFrame(data=self.candles[-79:-1], columns=['time', 'open', 'close', 'high', 'low'])
+                        data = pd.DataFrame(data=self.candles[-4681:-1], columns=['time', 'open', 'close', 'high', 'low'])
                         data.set_index('time', inplace=True)
 
                         # bollinger bands
@@ -70,6 +70,30 @@ class MLIndicator(Thread):
                         data['kujin_sen'] = sen(data[['close']] ,26)
                         data['senko_A'] = senko_span_A(data['tekan_sen'], data['kujin_sen'], 26)
                         data['senko_B'] = senko_span_B(data[['close']], 52, 26)
+                        
+                        # bollinger bands
+                        data['bb_basis_hour'], data['bb_upper_hour'], data['bb_lower_hour'] = bollinger_bands(data[['close']], 1200)
+
+                        # macd
+                        data['macd_ema_hour'] = macd(data[['close']], 720, 1560)
+                        data['macd_sma_hour'] = macd(data[['close']], 720, 1560, True)
+                        data['macd_signal_ema_hour'] = macd_signal(data[['macd_ema_hour']], 540)
+                        data['macd_signal_sma_hour'] = macd_signal(data[['macd_sma_hour']], 540, True)
+
+                        # rsi
+                        data['rsi_9_hour'] = rsi(data[['close']], 540)
+                        data['rsi_14_hour'] = rsi(data[['close']], 840)
+                        data['rsi_28_hour'] = rsi(data[['close']], 1680)
+
+                        # stochastique
+                        data['stochastique_hour'] = stochastique(data[['close']], 840)
+                        data['stochastique_signal_hour'] = stochastique_signal(data[['stochastique_hour']], 840)
+
+                        # ichimoku
+                        data['tekan_sen_hour'] = sen(data[['close']] ,540)
+                        data['kujin_sen_hour'] = sen(data[['close']] ,1560)
+                        data['senko_A_hour'] = senko_span_A(data['tekan_sen_hour'], data['kujin_sen_hour'], 1560)
+                        data['senko_B_hour'] = senko_span_B(data[['close']], 3120, 1560)
 
                         print(data.tail(n=1))
 
@@ -84,11 +108,6 @@ class MLIndicator(Thread):
                             self.poDriver.put()
 
                         print(f"MLIndicator: call={call}, even={even}, put={put}")
-                    '''
-
-                    print(len(self.candles))
-                    sleep(1)
-
 
                 except Exception as e:
                     print("MLIndicator: an error occured while processing the data")
