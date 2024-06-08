@@ -36,8 +36,17 @@ class MLIndicator(Thread):
 
     def run(self):
         print("MLIndicator: started")
+
         while self.running:
-            if self.activated and self.threshlod > 0.5 and Configuration.SYMBOL == self.poDriver.getCurrentSymbol() and self.modelLoaded:
+            if self.activated and self.threshlod > 0.5 :
+                if Configuration.SYMBOL != self.poDriver.getCurrentSymbol():
+                    self.poDriver.tryNextFavoriteItem()
+                    continue
+
+                self.ensureEnoughDataAreLoaded()
+                if not self.modelLoaded:
+                    continue
+                
                 try:
                     self.candles_lock.acquire()
                     
@@ -45,7 +54,7 @@ class MLIndicator(Thread):
                         self.last_timestamp = self.candles[-2][CandleIndex.TIME]
 
                         data = pd.DataFrame(data=self.candles[-4681:-1], columns=['time', 'open', 'close', 'high', 'low'])
-                        data.set_index('time', inplace=True)
+                        #data.set_index('time', inplace=True)
 
                         # bollinger bands
                         data['bb_basis'], data['bb_upper'], data['bb_lower'] = bollinger_bands(data[['close']], 20)
@@ -127,3 +136,10 @@ class MLIndicator(Thread):
     def printState(self):
         print(f'Model: {"loaded" if self.modelLoaded else "not loaded"}')
         print(f'State: {"active" if self.activated else "inactive"}')
+
+    def ensureEnoughDataAreLoaded(self):
+        while len(self.candles) < 4681:
+            if Configuration.SYMBOL != self.poDriver.getCurrentSymbol():
+                break
+            self.poDriver.scrollCandles()
+        self.poDriver.scrollToEnd()
